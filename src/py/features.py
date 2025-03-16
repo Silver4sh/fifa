@@ -32,6 +32,18 @@ def top_player(data_frame, top_n=5):
     sorted_df = data_frame.sort_values(by='Overall', ascending=False)
     return sorted_df.head(top_n)
 
+def top_team(data_frame, top_n=5):
+    """
+    Menghitung rata-rata rating 'Overall' per tim dan mengembalikan top team.
+    Pastikan kolom 'Club' dan 'Overall' ada dalam data.
+    """
+    if 'Club' not in data_frame.columns or 'Overall' not in data_frame.columns:
+        messagebox.showerror("Error", "Kolom 'Club' atau 'Overall' tidak ditemukan dalam data.")
+        return None
+    group = data_frame.groupby('Club')['Overall'].mean().reset_index()
+    group = group.sort_values(by='Overall', ascending=False)
+    return group.head(top_n)
+
 def visual_data(data_frame, master):
     window = Toplevel(master)
     window.title("Visual Data")

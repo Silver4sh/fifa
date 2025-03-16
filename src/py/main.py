@@ -5,21 +5,28 @@ import webbrowser
 import load
 import features
 
-# --- Kelas AutocompleteCombobox ---
+# --- AutocompleteCombobox dengan dropdown otomatis ---
 class AutocompleteCombobox(ttk.Combobox):
     """
-    Combobox dengan fitur autocomplete sederhana.
-    Saat mengetik, dropdown akan menyajikan saran yang sesuai.
+    Combobox dengan fitur autocomplete.
+    Dropdown akan muncul saat fokus masuk tanpa input,
+    dan menyajikan saran sesuai input.
     """
     def __init__(self, master=None, **kwargs):
-        # Jangan set state="readonly" agar user bisa mengetik manual.
+        # Jangan set state="readonly" agar user bisa mengetik.
         super().__init__(master, **kwargs)
         self._completion_list = []
         self.bind('<KeyRelease>', self.handle_keyrelease)
+        self.bind("<FocusIn>", self.on_focusin)
 
     def set_completion_list(self, completion_list):
         self._completion_list = sorted(completion_list, key=str.lower)
         self['values'] = self._completion_list
+
+    def on_focusin(self, event):
+        if not self.get():
+            self['values'] = self._completion_list
+            self.event_generate('<Down>')
 
     def handle_keyrelease(self, event):
         # Abaikan tombol navigasi tertentu
@@ -32,7 +39,7 @@ class AutocompleteCombobox(ttk.Combobox):
             filtered = [item for item in self._completion_list if item.lower().startswith(text.lower())]
             self['values'] = filtered if filtered else self._completion_list
 
-# --- Kelas aplikasi utama ---
+# --- Aplikasi Utama ---
 class FIFAApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -40,7 +47,7 @@ class FIFAApp(tk.Tk):
         self.configure(bg="#f0f0f0")
         self.data_frame = None
 
-        # Setup tampilan dengan ttk.Style
+        # Setup style
         self.style = ttk.Style(self)
         self.style.theme_use("clam")
         self.style.configure("TFrame", background="#f0f0f0")
@@ -49,28 +56,26 @@ class FIFAApp(tk.Tk):
         self.style.configure("TButton", font=("Arial", 10))
         
         self.create_widgets()
-        self.ask_for_csv()  # Meminta input file CSV di awal
+        self.ask_for_csv()  # Minta file CSV di awal
         
         self.update()
         self.minsize(self.winfo_width(), self.winfo_height())
         
     def create_widgets(self):
-        # Header frame: Judul, status, dan tombol pilih CSV
+        # Header: Judul, status, dan tombol pilih CSV (tanpa box kosong di depan)
         header_frame = ttk.Frame(self)
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         
         title_label = ttk.Label(header_frame, text="FIFA Data Viewer", style="Header.TLabel")
-        title_label.pack(side=tk.LEFT, padx=(0, 20))
+        title_label.pack(side=tk.LEFT, padx=(0,20))
         
         self.status_label = ttk.Label(header_frame, text="Silakan pilih file CSV")
-        self.status_label.pack(side=tk.LEFT, padx=(0, 20))
+        self.status_label.pack(side=tk.LEFT, padx=(0,20))
         
         load_button = ttk.Button(header_frame, text="Pilih CSV", command=self.ask_for_csv)
         load_button.pack(side=tk.RIGHT)
         
-        # Tidak dibuat content frame (Treeview) agar tidak muncul box kosong di awal.
-        
-        # Frame tombol fitur tambahan (diletakkan di bagian bawah)
+        # Tombol fitur di bagian bawah
         button_frame = ttk.Frame(self)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         
@@ -86,8 +91,11 @@ class FIFAApp(tk.Tk):
         top_player_button = ttk.Button(button_frame, text="Top Player", command=self.show_top_player)
         top_player_button.grid(row=0, column=3, padx=5, pady=5)
         
+        top_team_button = ttk.Button(button_frame, text="Top Team", command=self.show_top_team)
+        top_team_button.grid(row=0, column=4, padx=5, pady=5)
+        
         visual_data_button = ttk.Button(button_frame, text="Visual Data", command=self.show_visual_data)
-        visual_data_button.grid(row=0, column=4, padx=5, pady=5)
+        visual_data_button.grid(row=0, column=5, padx=5, pady=5)
         
     def ask_for_csv(self):
         file_path = filedialog.askopenfilename(
@@ -108,10 +116,9 @@ class FIFAApp(tk.Tk):
             messagebox.showerror("Error", str(e))
             self.status_label.config(text=str(e))
             return
-        # Data dimuat ke memori tanpa langsung ditampilkan di GUI.
+        # Data disimpan ke memori (tidak langsung ditampilkan)
         
     def show_info_player(self):
-        """Tampilkan Info Player dengan AutocompleteCombobox; hasil info ditampilkan dalam Treeview (tanpa scrollbar horizontal)."""
         if self.data_frame is None:
             messagebox.showwarning("Warning", "Data belum dimuat!")
             return
@@ -125,7 +132,7 @@ class FIFAApp(tk.Tk):
         try:
             player_list = sorted(self.data_frame['Name'].dropna().unique().tolist())
         except KeyError:
-            messagebox.showerror("Error", "Kolom 'Name' tidak ditemukan dalam data.")
+            messagebox.showerror("Error", "Kolom 'Name' tidak ditemukan.")
             win.destroy()
             return
         
@@ -139,14 +146,12 @@ class FIFAApp(tk.Tk):
             if info is None:
                 messagebox.showinfo("Info Player", f"Data untuk pemain '{player_name}' tidak ditemukan.")
             else:
-                # Tampilkan hasil info dalam Treeview dengan dua kolom: Attribute dan Value
                 player_win = tk.Toplevel(self)
                 player_win.title(f"Info Player: {player_name}")
                 
                 frame_player = ttk.Frame(player_win)
                 frame_player.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
                 
-                # Hanya scrollbar vertikal (tanpa scrollbar horizontal)
                 scroll_y = ttk.Scrollbar(frame_player, orient="vertical")
                 scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
                 
@@ -163,12 +168,13 @@ class FIFAApp(tk.Tk):
                 tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                 scroll_y.config(command=tree.yview)
                 
-                # Jika ada baris dengan attribute 'url', biarkan double-click membuka URL
+                # Bind double-click untuk buka URL (cek jika nilai cell dimulai dengan http)
                 def on_double_click(event):
                     item = tree.identify_row(event.y)
                     if item:
                         values = tree.item(item, "values")
-                        if values and values[0].lower() == "url" and str(values[1]).startswith("http"):
+                        # Cek jika cell kedua (value) adalah URL
+                        if values and str(values[1]).lower().startswith("http"):
                             webbrowser.open(str(values[1]))
                 tree.bind("<Double-1>", on_double_click)
                 
@@ -183,7 +189,6 @@ class FIFAApp(tk.Tk):
         win.minsize(win.winfo_width(), win.winfo_height())
         
     def show_info_team(self):
-        """Tampilkan Info Team dengan AutocompleteCombobox; hasil ditampilkan dalam Treeview yang fit dan rapi."""
         if self.data_frame is None:
             messagebox.showwarning("Warning", "Data belum dimuat!")
             return
@@ -197,7 +202,7 @@ class FIFAApp(tk.Tk):
         try:
             team_list = sorted(self.data_frame['Club'].dropna().unique().tolist())
         except KeyError:
-            messagebox.showerror("Error", "Kolom 'Club' tidak ditemukan dalam data.")
+            messagebox.showerror("Error", "Kolom 'Club' tidak ditemukan.")
             win.destroy()
             return
         
@@ -240,6 +245,17 @@ class FIFAApp(tk.Tk):
                 scroll_y.config(command=tree.yview)
                 scroll_x.config(command=tree.xview)
                 
+                # Bind double-click jika ada URL dalam sel (opsional)
+                def on_double_click(event):
+                    item = tree.identify_row(event.y)
+                    if item:
+                        values = tree.item(item, "values")
+                        for cell in values:
+                            if str(cell).lower().startswith("http"):
+                                webbrowser.open(str(cell))
+                                break
+                tree.bind("<Double-1>", on_double_click)
+                
                 team_win.update()
                 team_win.minsize(team_win.winfo_width(), team_win.winfo_height())
             win.destroy()
@@ -251,19 +267,14 @@ class FIFAApp(tk.Tk):
         win.minsize(win.winfo_width(), win.winfo_height())
         
     def show_summary(self):
-        """Ekspor summary sebagai file Excel (XLSX/XLS)."""
         if self.data_frame is None:
             messagebox.showwarning("Warning", "Data belum dimuat!")
             return
         
         extract_location = filedialog.asksaveasfilename(
-            title="Pilih lokasi untuk menyimpan hasil ekstrak data",
+            title="Pilih lokasi untuk menyimpan summary",
             defaultextension=".xlsx",
-            filetypes=[
-                ("Excel Files", "*.xlsx"),
-                ("Excel Files", "*.xls"),
-                ("All Files", "*.*")
-            ]
+            filetypes=[("Excel Files", "*.xlsx"), ("Excel Files", "*.xls"), ("All Files", "*.*")]
         )
         if not extract_location:
             messagebox.showwarning("Peringatan", "Lokasi ekstrak tidak dipilih!")
@@ -274,9 +285,9 @@ class FIFAApp(tk.Tk):
             if not isinstance(summary_stats, pd.DataFrame):
                 summary_stats = pd.DataFrame(summary_stats)
             summary_stats.to_excel(extract_location, index=True)
-            messagebox.showinfo("Success", f"Summary data berhasil diekstrak ke: {extract_location}")
+            messagebox.showinfo("Success", f"Summary berhasil disimpan di: {extract_location}")
         except Exception as e:
-            messagebox.showerror("Error", f"Gagal menyimpan summary data: {e}")
+            messagebox.showerror("Error", f"Gagal menyimpan summary: {e}")
         
     def show_top_player(self):
         if self.data_frame is None:
@@ -316,7 +327,46 @@ class FIFAApp(tk.Tk):
         
         window.update()
         window.minsize(window.winfo_width(), window.winfo_height())
-            
+        
+    def show_top_team(self):
+        if self.data_frame is None:
+            messagebox.showwarning("Warning", "Data belum dimuat!")
+            return
+        
+        top_teams = features.top_team(self.data_frame)
+        if top_teams is None or top_teams.empty:
+            messagebox.showinfo("Top Team", "Data top team tidak tersedia.")
+            return
+        
+        window = tk.Toplevel(self)
+        window.title("Top Teams")
+        
+        frame_team = ttk.Frame(window)
+        frame_team.pack(fill=tk.BOTH, expand=True)
+        
+        scroll_y = ttk.Scrollbar(frame_team, orient="vertical")
+        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_x = ttk.Scrollbar(frame_team, orient="horizontal")
+        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        tree = ttk.Treeview(frame_team,
+                            columns=list(top_teams.columns),
+                            show="headings",
+                            yscrollcommand=scroll_y.set,
+                            xscrollcommand=scroll_x.set)
+        for col in top_teams.columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=150, anchor="center")
+        for _, row in top_teams.iterrows():
+            tree.insert("", tk.END, values=list(row))
+        
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll_y.config(command=tree.yview)
+        scroll_x.config(command=tree.xview)
+        
+        window.update()
+        window.minsize(window.winfo_width(), window.winfo_height())
+        
     def show_visual_data(self):
         if self.data_frame is None:
             messagebox.showwarning("Warning", "Data belum dimuat!")

@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import pandas as pd  # Untuk ekspor Excel
+import pandas as pd  
 import webbrowser
 import load
 import features
 
-# --- AutocompleteCombobox dengan dropdown otomatis ---
 class AutocompleteCombobox(ttk.Combobox):
     """
     Combobox dengan fitur autocomplete.
@@ -13,7 +12,6 @@ class AutocompleteCombobox(ttk.Combobox):
     dan menyajikan saran sesuai input.
     """
     def __init__(self, master=None, **kwargs):
-        # Jangan set state="readonly" agar user bisa mengetik.
         super().__init__(master, **kwargs)
         self._completion_list = []
         self.bind('<KeyRelease>', self.handle_keyrelease)
@@ -29,7 +27,6 @@ class AutocompleteCombobox(ttk.Combobox):
             self.event_generate('<Down>')
 
     def handle_keyrelease(self, event):
-        # Abaikan tombol navigasi tertentu
         if event.keysym in ("BackSpace", "Left", "Right", "Up", "Down", "Return", "Escape"):
             return
         text = self.get()
@@ -39,7 +36,6 @@ class AutocompleteCombobox(ttk.Combobox):
             filtered = [item for item in self._completion_list if item.lower().startswith(text.lower())]
             self['values'] = filtered if filtered else self._completion_list
 
-# --- Aplikasi Utama ---
 class FIFAApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -56,13 +52,12 @@ class FIFAApp(tk.Tk):
         self.style.configure("TButton", font=("Arial", 10))
         
         self.create_widgets()
-        self.ask_for_csv()  # Minta file CSV di awal
+        self.ask_for_csv()  
         
-        self.update()
+        self.update_idletasks()
         self.minsize(self.winfo_width(), self.winfo_height())
         
     def create_widgets(self):
-        # Header: Judul, status, dan tombol pilih CSV (tanpa box kosong di depan)
         header_frame = ttk.Frame(self)
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         
@@ -75,27 +70,21 @@ class FIFAApp(tk.Tk):
         load_button = ttk.Button(header_frame, text="Pilih CSV", command=self.ask_for_csv)
         load_button.pack(side=tk.RIGHT)
         
-        # Tombol fitur di bagian bawah
         button_frame = ttk.Frame(self)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         
-        info_player_button = ttk.Button(button_frame, text="Info Player", command=self.show_info_player)
-        info_player_button.grid(row=0, column=0, padx=5, pady=5)
-        
-        info_team_button = ttk.Button(button_frame, text="Info Team", command=self.show_info_team)
-        info_team_button.grid(row=0, column=1, padx=5, pady=5)
-        
-        summary_button = ttk.Button(button_frame, text="Summary", command=self.show_summary)
-        summary_button.grid(row=0, column=2, padx=5, pady=5)
-        
-        top_player_button = ttk.Button(button_frame, text="Top Player", command=self.show_top_player)
-        top_player_button.grid(row=0, column=3, padx=5, pady=5)
-        
-        top_team_button = ttk.Button(button_frame, text="Top Team", command=self.show_top_team)
-        top_team_button.grid(row=0, column=4, padx=5, pady=5)
-        
-        visual_data_button = ttk.Button(button_frame, text="Visual Data", command=self.show_visual_data)
-        visual_data_button.grid(row=0, column=5, padx=5, pady=5)
+        ttk.Button(button_frame, text="Info Player", command=self.show_info_player)\
+            .grid(row=0, column=0, padx=5, pady=5)
+        ttk.Button(button_frame, text="Info Team", command=self.show_info_team)\
+            .grid(row=0, column=1, padx=5, pady=5)
+        ttk.Button(button_frame, text="Summary", command=self.show_summary)\
+            .grid(row=0, column=2, padx=5, pady=5)
+        ttk.Button(button_frame, text="Top Player", command=self.show_top_player)\
+            .grid(row=0, column=3, padx=5, pady=5)
+        ttk.Button(button_frame, text="Top Team", command=self.show_top_team)\
+            .grid(row=0, column=4, padx=5, pady=5)
+        ttk.Button(button_frame, text="Visual Data", command=self.show_visual_data)\
+            .grid(row=0, column=5, padx=5, pady=5)
         
     def ask_for_csv(self):
         file_path = filedialog.askopenfilename(
@@ -126,9 +115,7 @@ class FIFAApp(tk.Tk):
         win = tk.Toplevel(self)
         win.title("Info Player")
         
-        label = ttk.Label(win, text="Masukkan atau pilih nama pemain:")
-        label.pack(pady=5)
-        
+        ttk.Label(win, text="Masukkan atau pilih nama pemain:").pack(pady=5)
         try:
             player_list = sorted(self.data_frame['Name'].dropna().unique().tolist())
         except KeyError:
@@ -168,25 +155,19 @@ class FIFAApp(tk.Tk):
                 tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                 scroll_y.config(command=tree.yview)
                 
-                # Bind double-click untuk buka URL (cek jika nilai cell dimulai dengan http)
                 def on_double_click(event):
                     item = tree.identify_row(event.y)
                     if item:
                         values = tree.item(item, "values")
-                        # Cek jika cell kedua (value) adalah URL
                         if values and str(values[1]).lower().startswith("http"):
                             webbrowser.open(str(values[1]))
                 tree.bind("<Double-1>", on_double_click)
                 
-                player_win.update()
-                player_win.minsize(player_win.winfo_width(), player_win.winfo_height())
+                player_win.minsize(400, 300)
             win.destroy()
         
-        button = ttk.Button(win, text="Tampilkan Info", command=on_select)
-        button.pack(pady=5)
-        
-        win.update()
-        win.minsize(win.winfo_width(), win.winfo_height())
+        ttk.Button(win, text="Tampilkan Info", command=on_select).pack(pady=5)
+        win.minsize(300, 120)
         
     def show_info_team(self):
         if self.data_frame is None:
@@ -196,9 +177,7 @@ class FIFAApp(tk.Tk):
         win = tk.Toplevel(self)
         win.title("Info Team")
         
-        label = ttk.Label(win, text="Masukkan atau pilih nama tim:")
-        label.pack(pady=5)
-        
+        ttk.Label(win, text="Masukkan atau pilih nama tim:").pack(pady=5)
         try:
             team_list = sorted(self.data_frame['Club'].dropna().unique().tolist())
         except KeyError:
@@ -219,9 +198,8 @@ class FIFAApp(tk.Tk):
                 team_win = tk.Toplevel(self)
                 team_win.title(f"Info Team: {team_name}")
                 
-                label_title = ttk.Label(team_win, text=f"Data untuk tim: {team_name}", style="Header.TLabel")
-                label_title.pack(pady=5)
-                
+                ttk.Label(team_win, text=f"Data untuk tim: {team_name}", style="Header.TLabel")\
+                    .pack(pady=5)
                 frame_team = ttk.Frame(team_win)
                 frame_team.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
                 
@@ -245,7 +223,6 @@ class FIFAApp(tk.Tk):
                 scroll_y.config(command=tree.yview)
                 scroll_x.config(command=tree.xview)
                 
-                # Bind double-click jika ada URL dalam sel (opsional)
                 def on_double_click(event):
                     item = tree.identify_row(event.y)
                     if item:
@@ -256,15 +233,11 @@ class FIFAApp(tk.Tk):
                                 break
                 tree.bind("<Double-1>", on_double_click)
                 
-                team_win.update()
-                team_win.minsize(team_win.winfo_width(), team_win.winfo_height())
+                team_win.minsize(500, 300)
             win.destroy()
         
-        button = ttk.Button(win, text="Tampilkan Info", command=on_select)
-        button.pack(pady=5)
-        
-        win.update()
-        win.minsize(win.winfo_width(), win.winfo_height())
+        ttk.Button(win, text="Tampilkan Info", command=on_select).pack(pady=5)
+        win.minsize(300, 120)
         
     def show_summary(self):
         if self.data_frame is None:
@@ -293,40 +266,84 @@ class FIFAApp(tk.Tk):
         if self.data_frame is None:
             messagebox.showwarning("Warning", "Data belum dimuat!")
             return
+
+        sel_win = tk.Toplevel(self)
+        sel_win.title("Pilih Kriteria Top Player")
+        sel_win.resizable(False, False)
         
-        top_players = features.top_player(self.data_frame)
-        if top_players is None or top_players.empty:
-            messagebox.showinfo("Top Player", "Data top player tidak tersedia.")
-            return
+        ttk.Label(sel_win, text="Pilih kriteria:")\
+            .grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        choice_var = tk.StringVar(value="overall")
+        ttk.Radiobutton(sel_win, text="Overall", variable=choice_var, value="overall")\
+            .grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        ttk.Radiobutton(sel_win, text="Berdasarkan Posisi", variable=choice_var, value="position")\
+            .grid(row=0, column=2, padx=5, pady=5, sticky="w")
         
-        window = tk.Toplevel(self)
-        window.title("Top Players")
+        frame_combo = ttk.Frame(sel_win)
+        frame_combo.grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="w")
+        ttk.Label(frame_combo, text="Pilih posisi:")\
+            .grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        pos_combo = AutocompleteCombobox(frame_combo, state="disabled")
+        pos_combo.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
-        frame_top = ttk.Frame(window)
-        frame_top.pack(fill=tk.BOTH, expand=True)
+        def update_combo(*args):
+            if choice_var.get() == "position":
+                try:
+                    pos_list = sorted(self.data_frame['Position'].dropna().unique().tolist())
+                except KeyError:
+                    messagebox.showerror("Error", "Kolom 'Position' tidak ditemukan.")
+                    sel_win.destroy()
+                    return
+                pos_combo.set_completion_list(pos_list)
+                pos_combo.config(state="normal")
+            else:
+                pos_combo.set("")
+                pos_combo.config(state="disabled")
+        choice_var.trace("w", update_combo)
+        update_combo()
         
-        scroll_y = ttk.Scrollbar(frame_top, orient="vertical")
-        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-        scroll_x = ttk.Scrollbar(frame_top, orient="horizontal")
-        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        def on_select():
+            if choice_var.get() == "overall":
+                top_players = features.top_player(self.data_frame)
+            else:
+                pos = pos_combo.get().strip()
+                if not pos:
+                    messagebox.showwarning("Warning", "Silakan pilih posisi terlebih dahulu.")
+                    return
+                top_players = features.top_player_by_position(self.data_frame, pos)
+            if top_players is None or top_players.empty:
+                messagebox.showinfo("Top Player", "Data top player tidak tersedia.")
+                return
+
+            res_win = tk.Toplevel(self)
+            res_win.title("Top Players")
+            res_frame = ttk.Frame(res_win)
+            res_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+            res_win.rowconfigure(0, weight=1)
+            res_win.columnconfigure(0, weight=1)
+            
+            tree = ttk.Treeview(res_frame, columns=list(top_players.columns), show="headings")
+            tree.grid(row=0, column=0, sticky="nsew")
+            scroll_y = ttk.Scrollbar(res_frame, orient="vertical", command=tree.yview)
+            scroll_y.grid(row=0, column=1, sticky="ns")
+            scroll_x = ttk.Scrollbar(res_frame, orient="horizontal", command=tree.xview)
+            scroll_x.grid(row=1, column=0, sticky="ew")
+            tree.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+            res_frame.rowconfigure(0, weight=1)
+            res_frame.columnconfigure(0, weight=1)
+            
+            for col in top_players.columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=100, anchor="center")
+            for row in top_players.itertuples(index=False):
+                tree.insert("", tk.END, values=list(row))
+            
+            res_win.minsize(500, 300)
+            sel_win.destroy()
         
-        tree = ttk.Treeview(frame_top,
-                            columns=list(top_players.columns),
-                            show="headings",
-                            yscrollcommand=scroll_y.set,
-                            xscrollcommand=scroll_x.set)
-        for col in top_players.columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=100, anchor="center")
-        for _, row in top_players.iterrows():
-            tree.insert("", tk.END, values=list(row))
-        
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll_y.config(command=tree.yview)
-        scroll_x.config(command=tree.xview)
-        
-        window.update()
-        window.minsize(window.winfo_width(), window.winfo_height())
+        ttk.Button(sel_win, text="Tampilkan Top Player", command=on_select)\
+            .grid(row=2, column=2, padx=10, pady=10, sticky="e")
+        sel_win.focus_force()
         
     def show_top_team(self):
         if self.data_frame is None:
@@ -338,34 +355,28 @@ class FIFAApp(tk.Tk):
             messagebox.showinfo("Top Team", "Data top team tidak tersedia.")
             return
         
-        window = tk.Toplevel(self)
-        window.title("Top Teams")
+        win = tk.Toplevel(self)
+        win.title("Top Teams")
+        frame = ttk.Frame(win)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        frame_team = ttk.Frame(window)
-        frame_team.pack(fill=tk.BOTH, expand=True)
+        tree = ttk.Treeview(frame, columns=list(top_teams.columns), show="headings")
+        tree.grid(row=0, column=0, sticky="nsew")
+        scroll_y = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        scroll_y.grid(row=0, column=1, sticky="ns")
+        scroll_x = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        scroll_x.grid(row=1, column=0, sticky="ew")
+        tree.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
         
-        scroll_y = ttk.Scrollbar(frame_team, orient="vertical")
-        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-        scroll_x = ttk.Scrollbar(frame_team, orient="horizontal")
-        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
-        
-        tree = ttk.Treeview(frame_team,
-                            columns=list(top_teams.columns),
-                            show="headings",
-                            yscrollcommand=scroll_y.set,
-                            xscrollcommand=scroll_x.set)
         for col in top_teams.columns:
             tree.heading(col, text=col)
             tree.column(col, width=150, anchor="center")
         for _, row in top_teams.iterrows():
             tree.insert("", tk.END, values=list(row))
-        
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll_y.config(command=tree.yview)
-        scroll_x.config(command=tree.xview)
-        
-        window.update()
-        window.minsize(window.winfo_width(), window.winfo_height())
+            
+        win.minsize(500, 300)
         
     def show_visual_data(self):
         if self.data_frame is None:

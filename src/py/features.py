@@ -22,7 +22,6 @@ def info_team(data_frame, team_name):
     return result
 
 def summary(data_frame):
-    # Mengembalikan statistik ringkasan untuk kolom numerik
     return data_frame.describe()
 
 def top_player(data_frame, top_n=5):
@@ -32,11 +31,21 @@ def top_player(data_frame, top_n=5):
     sorted_df = data_frame.sort_values(by='Overall', ascending=False)
     return sorted_df.head(top_n)
 
+def top_player_by_position(data_frame, position, top_n=5):
+    if 'Position' not in data_frame.columns:
+        messagebox.showerror("Error", "Kolom 'Position' tidak ditemukan dalam data.")
+        return None
+    subset = data_frame[data_frame['Position'].str.lower() == position.lower()]
+    if subset.empty:
+        messagebox.showinfo("Info", f"Tidak ada pemain dengan posisi {position}.")
+        return None
+    if 'Overall' not in subset.columns:
+        messagebox.showerror("Error", "Kolom 'Overall' tidak ditemukan dalam data.")
+        return None
+    sorted_subset = subset.sort_values(by='Overall', ascending=False)
+    return sorted_subset.head(top_n)
+
 def top_team(data_frame, top_n=5):
-    """
-    Menghitung rata-rata rating 'Overall' per tim dan mengembalikan top team.
-    Pastikan kolom 'Club' dan 'Overall' ada dalam data.
-    """
     if 'Club' not in data_frame.columns or 'Overall' not in data_frame.columns:
         messagebox.showerror("Error", "Kolom 'Club' atau 'Overall' tidak ditemukan dalam data.")
         return None

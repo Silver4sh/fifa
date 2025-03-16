@@ -2,7 +2,6 @@ import pandas as pd
 import os
 
 def load_csv_data(file_path=None):
-    # Jika file_path tidak diberikan, gunakan file default di folder data/data.csv
     if file_path is None:
         file_path = os.path.join("data", "data.csv")
         
